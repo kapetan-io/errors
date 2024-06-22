@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/kapetan-io/errors"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,6 @@ func TestFields(t *testing.T) {
 
 		assert.Equal(t, "value1", m["key1"])
 		assert.Equal(t, "message: query error", m["err"])
-		assert.Equal(t, "*errors_test.ErrTest", m["errType"])
 		assert.Len(t, m, 3)
 	})
 
@@ -59,6 +59,11 @@ func TestFields(t *testing.T) {
 		assert.Equal(t, "message: query error", wrap.Error())
 		out := fmt.Sprintf("%+v", wrap)
 		assert.Contains(t, out, `message: query error (key1=value1)`)
+
+		var f errors.HasFields
+		if errors.As(wrap, &f) {
+			slog.Error("this error has log fields", f.Fields()...)
+		}
 	})
 
 	t.Run("errors.ToAttr() all fields", func(t *testing.T) {
@@ -67,7 +72,6 @@ func TestFields(t *testing.T) {
 		log.Error("test log fields", errors.ToAttr(wrap)...)
 		assert.Contains(t, b.String(), "test log fields")
 		assert.Contains(t, b.String(), `err="message: query error"`)
-		assert.Contains(t, b.String(), `errType=*errors_test.ErrTest`)
 		assert.Contains(t, b.String(), "key1=value1")
 
 		assert.Equal(t, "message: query error", wrap.Error())
@@ -79,6 +83,20 @@ func TestFields(t *testing.T) {
 		got := errors.Fields{"some", "context"}.Wrap(nil)
 		assert.Nil(t, got)
 	})
+}
+
+func TestSlogAttributes(t *testing.T) {
+	err := errors.Fields{
+		"key1", "value1",
+		slog.String("key2", "value2"),
+		slog.Duration("expired", time.Second),
+	}.Errorf("message")
+	assert.NotNil(t, err)
+	assert.Equal(t, fmt.Sprintf("%+v", err), "message (key1=value1, key2=value2, expired=1s)")
+	slog.Info("an error occurred!", errors.ToAttr(err)...)
+	err = errors.New("blah")
+	slog.Info("an error occurred!", errors.ToAttr(err)...)
+
 }
 
 func TestErrorf(t *testing.T) {

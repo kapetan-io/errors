@@ -134,8 +134,7 @@ func (c *fields) FormatFields() string {
 // ToMap collects all the fields from any errors that may have been wrapped
 func ToMap(err error) map[string]any {
 	result := map[string]any{
-		"err":     err.Error(),
-		"errType": fmt.Sprintf("%T", Unwrap(err)),
+		"err": err.Error(),
 	}
 
 	// Search the error chain for fields
@@ -160,7 +159,6 @@ func ToMap(err error) map[string]any {
 func ToAttr(err error) []any {
 	result := []any{
 		"err", err.Error(),
-		"errType", fmt.Sprintf("%T", Unwrap(err)),
 	}
 
 	// Search the error chain for fields
