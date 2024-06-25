@@ -31,7 +31,7 @@ func TestFields(t *testing.T) {
 
 		assert.Equal(t, "value1", m["key1"])
 		assert.Equal(t, "message: query error", m["err"])
-		assert.Len(t, m, 3)
+		assert.Len(t, m, 2)
 	})
 
 	t.Run("Can use errors.Is() from std `errors` package", func(t *testing.T) {
@@ -60,7 +60,6 @@ func TestFields(t *testing.T) {
 		out := fmt.Sprintf("%+v", wrap)
 		assert.Contains(t, out, `message: query error (key1=value1)`)
 
-		var f errors.HasFields
 		if errors.As(wrap, &f) {
 			slog.Error("this error has log fields", f.Fields()...)
 		}
