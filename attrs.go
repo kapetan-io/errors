@@ -121,7 +121,6 @@ func (e *ErrAttrs) Is(target error) bool {
 // type contains an Unwrap method returning error.
 // Otherwise, Unwrap returns nil.
 func (e *ErrAttrs) Unwrap() error {
-	errors.Unwrap(e.wrapped)
 	u, ok := e.wrapped.(interface {
 		Unwrap() error
 	})
