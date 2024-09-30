@@ -71,9 +71,13 @@ import this package and the standard `errors` package.
 - **errors.WithAttr()** - Attach context to an error using `slog.Attr`  `errros.WithAttr(slog.String("key", "value"))`
 - **errors.With().Wrap()** - Wrap an error without a message, attaching the code location where `Wrap()` was called
 - **errors.Last()** - Same as standard lib `errors.As()` but returns the last error in the err tree instead
-- **errors.With().Error()** - Same as standard lib `errors.New()`
-- **errors.With().Errorf()** - Same as standard lib `fmt.Errorf()`
+- **errors.With().Error()** - Same as standard lib `errors.New()` includes code location where `Error()` was called
+- **errors.With().Errorf()** - Same as standard lib `fmt.Errorf()` includes code location where `Errorf()` was called
+- **errors.Wrap()** - Wrap an error without a message, including the code location where `Wrap()` was called
 - **errors.Unwrap()** - Same as standard lib `errors.Unwrap()`
+- **errors.Error()** - Same as standard lib `errors.New()` includes code location where `Error()` was called
+- **errors.Errorf()** - Same as standard lib `fmt.Errorf()` include code location where `Errorf()` was called
+- **errors.Wrap()** - Wrap an error without a message, including the code location where `Wrap()` was called
 - **errors.New()** - Same as standard lib `errors.New()`
 - **errors.As()** - Same as standard lib `errors.As()`
 - **errors.Is()** - Same as standard lib `errors.Is()`

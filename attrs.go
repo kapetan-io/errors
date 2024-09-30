@@ -30,6 +30,49 @@ func WithAttr(attrs ...slog.Attr) *Attrs {
 	return a.WithAttr(attrs...)
 }
 
+// Error works exactly like standard lib `errors.New()` and includes
+// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// or ErrAttrs.Attrs()
+func Error(msg string) error {
+	var pcs [1]uintptr
+	runtime.Callers(2, pcs[:]) // skip [runtime.Callers, and this function]
+	return &ErrAttrs{
+		wrapped: errors.New(msg),
+		attrs:   &Attrs{},
+		pc:      pcs[0],
+	}
+}
+
+// Errorf works exactly like standard lib `fmt.Errorf()` and includes
+// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// or ErrAttrs.Attrs()
+func Errorf(format string, args ...any) error {
+	var pcs [1]uintptr
+	runtime.Callers(2, pcs[:]) // skip [runtime.Callers, and this function]
+	return &ErrAttrs{
+		wrapped: fmt.Errorf(format, args...),
+		attrs:   &Attrs{},
+		pc:      pcs[0],
+	}
+}
+
+// Wrap returns an error with stack information for the code location where Wrap
+// is called. The returned error has no "message" but defers to the wrapped message
+// when Error() is called. If err is nil, Wrap returns nil. Stack information can
+// be extracted with errors.AttrsWithCodeLoc() or ErrAttrs.Attrs()
+func Wrap(err error) error {
+	if err == nil {
+		return nil
+	}
+	var pcs [1]uintptr
+	runtime.Callers(2, pcs[:]) // skip [runtime.Callers, and this function]
+	return &ErrAttrs{
+		attrs:   &Attrs{},
+		pc:      pcs[0],
+		wrapped: err,
+	}
+}
+
 // Logger is a crazy idea which would extract the attributes from
 // the currently configured logger.
 //
@@ -77,7 +120,9 @@ func (a *Attrs) Wrap(err error) error {
 	}
 }
 
-// Error works exactly like standard lib `errors.New()`
+// Error works exactly like standard lib `errors.New()` and includes
+// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// or ErrAttrs.Attrs()
 func (a *Attrs) Error(msg string) error {
 	var pcs [1]uintptr
 	runtime.Callers(2, pcs[:]) // skip [runtime.Callers, and this function]
@@ -88,7 +133,9 @@ func (a *Attrs) Error(msg string) error {
 	}
 }
 
-// Errorf works exactly like standard lib `fmt.Errorf()`
+// Errorf works exactly like standard lib `fmt.Errorf()` and includes
+// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// or ErrAttrs.Attrs()
 func (a *Attrs) Errorf(format string, args ...any) error {
 	var pcs [1]uintptr
 	runtime.Callers(2, pcs[:]) // skip [runtime.Callers, and this function]

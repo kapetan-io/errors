@@ -29,3 +29,35 @@ func TestLast(t *testing.T) {
 	assert.False(t, errors.Last(errors.New("no attributes"), &last))
 	assert.Equal(t, "last: bottom", last.(error).Error())
 }
+
+func TestErrorf(t *testing.T) {
+	err := errors.Errorf("wrap: %w", errors.New("error"))
+	assert.EqualError(t, err, "wrap: error")
+
+	var a errors.HasAttrs
+	assert.True(t, errors.As(err, &a))
+	as, pc := a.Attrs()
+	assert.True(t, pc != 0)
+	assert.Equal(t, 0, len(as))
+}
+
+func TestError(t *testing.T) {
+	err := errors.Error("error")
+	assert.EqualError(t, err, "error")
+
+	var a errors.HasAttrs
+	assert.True(t, errors.As(err, &a))
+	as, pc := a.Attrs()
+	assert.True(t, pc != 0)
+	assert.Equal(t, 0, len(as))
+}
+
+func TestWrap(t *testing.T) {
+	err := errors.Wrap(errors.New("error"))
+
+	var a errors.HasAttrs
+	assert.True(t, errors.As(err, &a))
+	as, pc := a.Attrs()
+	assert.True(t, pc != 0)
+	assert.Equal(t, 0, len(as))
+}
