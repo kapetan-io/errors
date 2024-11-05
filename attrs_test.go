@@ -26,7 +26,7 @@ func TestAttrsWithCodeLoc(t *testing.T) {
 	err := errors.With("foo", "bar").Error("this is an error")
 	require.Error(t, err)
 
-	log.LogAttrs(context.Background(), slog.LevelInfo, err.Error(), errors.AttrsWithCodeLoc(err)...)
+	log.LogAttrs(context.Background(), slog.LevelInfo, err.Error(), errors.AttrsFromWithCodeLoc(err)...)
 
 	assert.Contains(t, w.String(), "msg=\"this is an error\"")
 	assert.Contains(t, w.String(), "foo=bar")
@@ -40,7 +40,7 @@ func TestAttrsWithCodeLoc(t *testing.T) {
 	err = errors.With(slog.String("friendship", "magic")).Errorf("wrapping the previous: %w", err)
 	require.Error(t, err)
 
-	log.LogAttrs(context.Background(), slog.LevelInfo, err.Error(), errors.AttrsWithCodeLoc(err)...)
+	log.LogAttrs(context.Background(), slog.LevelInfo, err.Error(), errors.AttrsFromWithCodeLoc(err)...)
 
 	assert.Contains(t, w.String(), "msg=\"wrapping the previous: this is an error\"")
 	assert.Contains(t, w.String(), "foo=bar")
@@ -123,4 +123,66 @@ func TestAttrs(t *testing.T) {
 		assert.NotNil(t, wrap)
 		assert.Equal(t, `message: query error (key=value)`, fmt.Sprintf("%+v", wrap))
 	})
+}
+
+func TestAttrsAll(t *testing.T) {
+	var w bytes.Buffer
+	log := slog.New(slog.NewTextHandler(&w, &slog.HandlerOptions{
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		}}))
+
+	err := errors.With("foo", "bar").Error("this is an error")
+	require.Error(t, err)
+
+	log.LogAttrs(context.Background(), slog.LevelInfo, "all attributes", errors.AttrsFromAll(err)...)
+
+	assert.Contains(t, w.String(), "msg=\"all attributes\"")
+	assert.Contains(t, w.String(), "foo=bar")
+	assert.Contains(t, w.String(), "code.filepath=")
+	assert.Contains(t, w.String(), "errors/attrs_test.go")
+	assert.Contains(t, w.String(), "code.function=github.com/kapetan-io/errors_test.TestAttrsAll")
+	assert.Contains(t, w.String(), "code.lineno=138")
+	assert.Contains(t, w.String(), "error=\"this is an error\"")
+
+	w.Reset()
+
+	log.LogAttrs(context.Background(), slog.LevelInfo, "all attributes",
+		errors.AttrsFromAll(errors.New("this is an error"))...)
+
+	assert.Contains(t, w.String(), "msg=\"all attributes\"")
+	assert.Contains(t, w.String(), "error=\"this is an error\"")
+
+}
+
+func TestAttrsWithErr(t *testing.T) {
+	var w bytes.Buffer
+	log := slog.New(slog.NewTextHandler(&w, &slog.HandlerOptions{
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		}}))
+
+	err := errors.With("foo", "bar").Error("this is an error")
+	require.Error(t, err)
+
+	log.LogAttrs(context.Background(), slog.LevelInfo, "with error", errors.AttrsFromWithErr(err)...)
+
+	assert.Contains(t, w.String(), "msg=\"with error\"")
+	assert.Contains(t, w.String(), "foo=bar")
+	assert.Contains(t, w.String(), "error=\"this is an error\"")
+
+	w.Reset()
+
+	log.LogAttrs(context.Background(), slog.LevelInfo, "with error",
+		errors.AttrsFromAll(errors.New("this is an error"))...)
+
+	assert.Contains(t, w.String(), "msg=\"with error\"")
+	assert.Contains(t, w.String(), "error=\"this is an error\"")
+
 }

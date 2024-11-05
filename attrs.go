@@ -31,7 +31,7 @@ func WithAttr(attrs ...slog.Attr) *Attrs {
 }
 
 // Error works exactly like standard lib `errors.New()` and includes
-// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// stack information which can be extracted with errors.AttrsFromWithCodeLoc()
 // or ErrAttrs.Attrs()
 func Error(msg string) error {
 	var pcs [1]uintptr
@@ -44,7 +44,7 @@ func Error(msg string) error {
 }
 
 // Errorf works exactly like standard lib `fmt.Errorf()` and includes
-// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// stack information which can be extracted with errors.AttrsFromWithCodeLoc()
 // or ErrAttrs.Attrs()
 func Errorf(format string, args ...any) error {
 	var pcs [1]uintptr
@@ -59,7 +59,7 @@ func Errorf(format string, args ...any) error {
 // Wrap returns an error with stack information for the code location where Wrap
 // is called. The returned error has no "message" but defers to the wrapped message
 // when Error() is called. If err is nil, Wrap returns nil. Stack information can
-// be extracted with errors.AttrsWithCodeLoc() or ErrAttrs.Attrs()
+// be extracted with errors.AttrsFromWithCodeLoc() or ErrAttrs.Attrs()
 func Wrap(err error) error {
 	if err == nil {
 		return nil
@@ -121,7 +121,7 @@ func (a *Attrs) Wrap(err error) error {
 }
 
 // Error works exactly like standard lib `errors.New()` and includes
-// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// stack information which can be extracted with errors.AttrsFromWithCodeLoc()
 // or ErrAttrs.Attrs()
 func (a *Attrs) Error(msg string) error {
 	var pcs [1]uintptr
@@ -134,7 +134,7 @@ func (a *Attrs) Error(msg string) error {
 }
 
 // Errorf works exactly like standard lib `fmt.Errorf()` and includes
-// stack information which can be extracted with errors.AttrsWithCodeLoc()
+// stack information which can be extracted with errors.AttrsFromWithCodeLoc()
 // or ErrAttrs.Attrs()
 func (a *Attrs) Errorf(format string, args ...any) error {
 	var pcs [1]uintptr
@@ -243,7 +243,24 @@ func AttrsFrom(err error) []slog.Attr {
 	return []slog.Attr{slog.Any("", nil)}
 }
 
-// AttrsWithCodeLoc returns any attrs from the err tree and includes source code from the
+// AttrsFromWithErr is identical to AttrsFrom, and includes the passed 'err'
+// in the returned attributes as an OTEL standard "error" field.
+func AttrsFromWithErr(err error) []slog.Attr {
+	if err == nil {
+		return []slog.Attr{slog.Any("", nil)}
+	}
+
+	var a HasAttrs
+	if errors.As(err, &a) {
+		result := []slog.Attr{slog.String("error", err.Error())}
+		attrs, _ := a.Attrs()
+		result = append(result, attrs...)
+		return result
+	}
+	return []slog.Attr{slog.String("error", err.Error())}
+}
+
+// AttrsFromWithCodeLoc returns any attrs from the err tree and includes source code from the
 // code position where the ErrAttrs error was created. The following OTEL fields
 // are included in the returned slog.Attr returned.
 //
@@ -253,7 +270,7 @@ func AttrsFrom(err error) []slog.Attr {
 //
 // If the err tree contains no instances of HasAttrs then
 // []slog.Attr{slog.Any("", nil)} is returned.
-func AttrsWithCodeLoc(err error) []slog.Attr {
+func AttrsFromWithCodeLoc(err error) []slog.Attr {
 	var a HasAttrs
 	if errors.As(err, &a) {
 		attrs, pc := a.Attrs()
@@ -261,6 +278,25 @@ func AttrsWithCodeLoc(err error) []slog.Attr {
 		return attrs
 	}
 	return []slog.Attr{slog.Any("", nil)}
+}
+
+// AttrsFromAll returns all possible attributes extracted from the passed error.
+// Equivalent to calling AttrsFromWithErr and AttrsFromWithCodeLoc and combining
+// all the attributes.
+func AttrsFromAll(err error) []slog.Attr {
+	if err == nil {
+		return []slog.Attr{slog.Any("", nil)}
+	}
+
+	var a HasAttrs
+	if errors.As(err, &a) {
+		result := []slog.Attr{slog.String("error", err.Error())}
+		attrs, pc := a.Attrs()
+		result = append(result, attrs...)
+		result = append(result, attrsFromPC(pc)...)
+		return result
+	}
+	return []slog.Attr{slog.Any("error", err.Error())}
 }
 
 // --------------------------

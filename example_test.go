@@ -36,7 +36,7 @@ func ExampleAttrs() {
 	fmt.Printf("%+v\n", s.attrs.With("foo", "bar").Error("query failed"))
 
 	// Which can be used to attach to logging
-	slog.LogAttrs(context.Background(), slog.LevelError, err.Error(), errors.AttrsWithCodeLoc(err)...)
+	slog.LogAttrs(context.Background(), slog.LevelError, err.Error(), errors.AttrsFromWithCodeLoc(err)...)
 
 	// Prints `message: query error (key1=value1)`
 	err = errors.New("query error")
