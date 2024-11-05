@@ -37,12 +37,12 @@ Extract OTEL standard `code` location information for use with slog
 //   code.filepath=.../errors/example_test.go
 //   code.lineno=16
 //   foo=bar]
-fmt.Printf("Attributes %v\n", errors.AttrsWithCodeLoc(err))
+fmt.Printf("Attributes %v\n", errors.AttrsFromWithCodeLoc(err))
 
 // 2024/09/30 12:31:16 ERROR query failed foo=bar 
 // code.filepath=/Users/thrawn/Development/errors/example_test.go
 // code.function=github.com/kapetan-io/errors_test.ExampleAttrs code.lineno=16
-slog.LogAttrs(ctx, slog.LevelError, err.Error(), errors.AttrsWithCodeLoc(err)...)
+slog.LogAttrs(ctx, slog.LevelError, err.Error(), errors.AttrsFromWithCodeLoc(err)...)
 ```
 Works with standard golang error wrapping
 ```go
